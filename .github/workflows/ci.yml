@@ -16,7 +16,26 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install mlflow pandas scikit-learn seaborn matplotlib dagshub
+          pip install -requirements.txt
+
+      - name: Debug Secrets (Check if they exist)
+        env:
+          MY_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+          MY_USER: ${{ secrets.DAGSHUB_USERNAME }}
+        run: |
+          if [ -z "$MY_TOKEN" ]; then
+            echo "FATAL ERROR: DAGSHUB_TOKEN is empty or not found!"
+            exit 1
+          else
+            echo "SUCCESS: DAGSHUB_TOKEN is found (masked)."
+          fi
+
+          if [ -z "$MY_USER" ]; then
+            echo "FATAL ERROR: DAGSHUB_USERNAME is empty or not found!"
+            exit 1
+          else
+            echo "SUCCESS: DAGSHUB_USERNAME is found: $MY_USER"
+          fi
 
       - name: Run MLflow Project
         env:
