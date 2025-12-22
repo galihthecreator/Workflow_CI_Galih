@@ -3,3 +3,6 @@ pandas
 scikit-learn
 dagshub
 docker
+
+mlserver
+mlserver-mlflow

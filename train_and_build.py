@@ -7,37 +7,34 @@ from sklearn.ensemble import RandomForestClassifier
 
 # KONFIGURASI
 DAGSHUB_USER = "galihthecreator"
-DAGSHUB_TOKEN = "f2149a203d7a20fac67b54fde0c780dffd410b7c"
 DAGSHUB_REPO = "Eksperimen_SML_Galih"
-DOCKER_USER = "galihthecreator"
+DOCKER_USER = os.environ.get("DOCKER_USERNAME","galihthecreator")
 IMAGE_NAME = 'titanic-model'
 
-# setup dagshub mlflow tracking uri
-os.environ['MLFLOW_TRACKING_USERNAME'] = DAGSHUB_USER
-os.environ['MLFLOW_TRACKING_PASSWORD'] = DAGSHUB_TOKEN
 mlflow.set_tracking_uri(f"https://dagshub.com/{DAGSHUB_USER}/{DAGSHUB_REPO}.mlflow")
 
 #LOAD DATA
 def load_data():
-    url = 'https://github.com/galihthecreator/Eksperimen_SML_Galih/blob/main/preprocessing/titanic_cleaned.csv'
-    df = pd.read_csv(url)
-    df = df.dropna(subnet=['Age','Embarked'])
-    df['Sex'] = df['Sex'].map({'male':0, 'female':1})
-    df = pd.get_dummies(df, columns=['Embarked'])
-    return df.select_dtypes(include=['number'])
+    df = pd.read_csv('train_clean.csv')
+    
+    X = df.drop('Survived', axis = 1, errors ='ignore')
+    y =df['Survived']
+    return X,y
 
 def train():
     print('Training model...')
     mlflow.sklearn.autolog(log_models=True)
-    df = load_data()
-    X = df.drop('Survived', axis=1)
-    y = df['Survived']
-
     mlflow.set_experiment('CI_Docker_Build')
 
     with mlflow.start_run() as run:
-        model = RandomForestClassifier()
+        X,y = load_data()
+        model = RandomForestClassifier(n_estimators=100, random_state=42)
         model.fit(X,y)
+
+        run_id = run.info.run_id
+        print(f'Model Trained. Run ID: {run_id}')
+
+        return run_id
     
 if __name__ == "__main__":
     # 1. Train Model
@@ -46,17 +43,22 @@ if __name__ == "__main__":
     # 2. Build Docker Image (Advance Requirement)
     print(f"Building Docker Image for Run ID: {run_id}")
     
-    # Format URI model
-    model_uri = f"runs:/{run_id}/model"
+    model_uri = f'runs:/{run_id}/model'
+    full_image_name =f'{DOCKER_USER}/{IMAGE_NAME}:latest'
+
+    #build
+    build_cmd = f'python -m mlflow models build-docker -m {model_uri} -n {full_image_name} --enable-mlserver'
+    exit_code = os.system(build_cmd)
+
+    if exit_code != 0:
+        raise Exception('Docker build gagal')
     
-    # Nama Image Lengkap
-    full_image_name = f"{DOCKER_USER}/{IMAGE_NAME}:latest"
+    print('Docker image built berhasil')
+    print('push ke docker hub')
+
+    push_exit_code = os.system(f'docker push {full_image_name}')
+
+    if push_exit_code != 0:
+        raise Exception('Docker push gagal, cek apakah sudah login')
     
-    # Perintah Build Docker via MLflow
-    # Note: Ini akan memanggil 'docker build' di sistem
-    os.system(f"mlflow models build-docker -m {model_uri} -n {full_image_name}")
-    
-    print("Docker Image Built Successfully.")
-    print("Pushing to Docker Hub...")
-    os.system(f"docker push {full_image_name}")
-    print("Done!")
+    print('done! image sudah dipush')
