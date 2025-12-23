@@ -24,7 +24,6 @@ def load_data():
 def train():
     print('Training model...')
     mlflow.sklearn.autolog(log_models=True)
-    mlflow.set_experiment('CI_Docker_Build')
 
     with mlflow.start_run() as run:
         X,y = load_data()
