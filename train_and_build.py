@@ -36,6 +36,10 @@ def train():
 
         run_id = run.info.run_id
         print(f'Model Trained. Run ID: {run_id}')
+
+        print('uploading model to dagshub/mlflow artifact')
+        mlflow.sklearn.log_model(model,'model')
+
         print("saving local model for docker....")
         mlflow.sklearn.save_model(model,'model_build_local')
 
