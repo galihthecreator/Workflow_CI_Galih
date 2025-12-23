@@ -24,10 +24,10 @@ def load_data():
 
 def train():
     print('Training model...')
-    mlflow.sklearn.autolog(log_models=True)
+    mlflow.sklearn.autolog(log_models=False)
 
-    if os.path.exists('model'):
-        shutil.rmtree('model')
+    if os.path.exists('model_build_local'):
+        shutil.rmtree('model_build_local')
 
     with mlflow.start_run() as run:
         X,y = load_data()
@@ -41,8 +41,12 @@ def train():
         mlflow.sklearn.log_model(model,'model')
 
         print("saving local model for docker....")
-        mlflow.sklearn.save_model(model,'model_build_local')
+        if os.path.exists('model_build_local'):
+            print("Folder lama ditemukan, menghapus...")
+            shutil.rmtree('model_build_local')
 
+        mlflow.sklearn.save_model(model, 'model_build_local')
+        
         return run_id
     
 if __name__ == "__main__":
