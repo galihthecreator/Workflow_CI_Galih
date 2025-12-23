@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import shutil
 import mlflow
 import mlflow.sklearn
 from sklearn.model_selection import train_test_split
@@ -25,6 +26,9 @@ def train():
     print('Training model...')
     mlflow.sklearn.autolog(log_models=True)
 
+    if os.path.exists('model_build_local'):
+        shutil.rmtree('model_build_local')
+
     with mlflow.start_run() as run:
         X,y = load_data()
         model = RandomForestClassifier(n_estimators=100, random_state=42)
@@ -32,6 +36,8 @@ def train():
 
         run_id = run.info.run_id
         print(f'Model Trained. Run ID: {run_id}')
+        print("saving local model for docker....")
+        mlflow.sklearn.save_model(model,'model_build_local')
 
         return run_id
     
@@ -42,7 +48,7 @@ if __name__ == "__main__":
     # 2. Build Docker Image (Advance Requirement)
     print(f"Building Docker Image for Run ID: {run_id}")
     
-    model_uri = f'runs:/{run_id}/model'
+    model_uri = 'model_build_local'
     full_image_name =f'{DOCKER_USER}/{IMAGE_NAME}:latest'
 
     #build
