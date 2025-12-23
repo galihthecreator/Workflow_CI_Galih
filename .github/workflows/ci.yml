@@ -44,6 +44,6 @@ jobs:
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DAGSHUB_USER: "galihthecreator"
+          DAGSHUB_USER: ${{ secrets.DAGSHUB_USERNAME }}
           DAGSHUB_REPO: "Eksperimen_SML_Galih"
         run: mlflow run . --env-manager=local
