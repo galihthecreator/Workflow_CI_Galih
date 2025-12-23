@@ -27,26 +27,25 @@ def train():
     mlflow.sklearn.autolog(log_models=False)
 
     if os.path.exists('model_build_local'):
+        print("Membersihkan folder lokal lama...")
         shutil.rmtree('model_build_local')
 
+    print("Starting Run...")
     with mlflow.start_run() as run:
-        X,y = load_data()
+        X, y = load_data()
         model = RandomForestClassifier(n_estimators=100, random_state=42)
-        model.fit(X,y)
+        model.fit(X, y)
 
         run_id = run.info.run_id
         print(f'Model Trained. Run ID: {run_id}')
-
-        print('uploading model to dagshub/mlflow artifact')
-        mlflow.sklearn.log_model(model,'model')
-
-        print("saving local model for docker....")
-        if os.path.exists('model_build_local'):
-            print("Folder lama ditemukan, menghapus...")
-            shutil.rmtree('model_build_local')
-
+        print("Saving model to local folder 'model_build_local'...")
         mlflow.sklearn.save_model(model, 'model_build_local')
         
+    
+        print("Uploading local folder to DagsHub Artifacts...")
+        mlflow.log_artifacts("model_build_local", artifact_path="model")
+        
+        print("✅ SUCCESS: Model uploaded and saved locally.")
         return run_id
     
 if __name__ == "__main__":
