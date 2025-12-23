@@ -26,8 +26,8 @@ def train():
     print('Training model...')
     mlflow.sklearn.autolog(log_models=True)
 
-    if os.path.exists('model_build_local'):
-        shutil.rmtree('model_build_local')
+    if os.path.exists('model'):
+        shutil.rmtree('model')
 
     with mlflow.start_run() as run:
         X,y = load_data()
